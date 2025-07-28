@@ -1,3 +1,5 @@
+[bits 64]
+
 section .data
         message db "Casiaush", 0xA
         lenmhgksak equ $ - message

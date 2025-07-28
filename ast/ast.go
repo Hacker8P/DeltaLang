@@ -16,7 +16,7 @@ func MkSyntax(compile string) Syntax {
 
 var (
 	Comment Syntax = MkSyntax(`^//.*$`)
-	Function Syntax = MkSyntax(`^(\s*func\s+)?[\p{L}_][\p{L}\p{N}_]*\s*\(\)\s*\{.*\}$`)
+	FunctionInline Syntax = MkSyntax(`^(\s*func\s+)?[\p{L}_][\p{L}\p{N}_]*\s*\(\)\s*\{.*\}$`)
 )
 
 func Match(element Element, syntax Syntax) bool {
