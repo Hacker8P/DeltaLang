@@ -4,6 +4,8 @@ import "unicode"
 
 import "slices"
 
+import "strconv"
+
 type Line string
 
 var (
@@ -21,9 +23,39 @@ var (
 )
 
 const (
-	BRACKET = "/bracket/"
+	BRACKET = "/bracket/" // '{', '}', '(', ')', '[', ']'
 	KEYWORD = "/keyword/"
 	WORD = "/word/"
+	SPACE = "/space/"
+)
+
+var (
+	Keywords = []string{
+		"func",
+		"type",
+		"var",
+	}
+	KeywordType = map[string]string{
+		"func" : `FUNC`,
+		"type" : `TYPE`,
+		"var" : `VAR`,
+	}
+	Brackets = []string{
+		"(",
+		")",
+		"[",
+		"]",
+		"{",
+		"}",
+	}
+	BracketsType = map[string]string{
+		"(" : `PA`,
+		")" : `PA_C`,
+		"[" : `SQ`,
+		"]" : `SQ_C`,
+		"{" : `CU`,
+		"}" : `CU_C`,
+	}
 )
 
 type LexObj struct {
@@ -32,9 +64,10 @@ type LexObj struct {
 	Value string
 }
 
-func Parse(line Line) []string {
+func Parse(line Line) []LexObj {
 	var (
 		Final []string
+		Outr []LexObj
 		WIPString string
 	)
 
@@ -59,5 +92,36 @@ func Parse(line Line) []string {
 		}
 	}
 
-	return Final
+	for _, rgk := range Final {
+		switch {
+		case slices.Contains(Keywords, rgk):
+			Outr = append(Outr, LexObj{
+				Class: KEYWORD,
+				Type: KeywordType[rgk],
+				Value: rgk,
+			})
+		case slices.Contains(Brackets, rgk):
+			Outr = append(Outr, LexObj{
+				Class: BRACKET,
+				Type: BracketsType[rgk],
+				Value: rgk,
+			})
+		case func() bool {_, err := strconv.Atoi(rgk); return err == nil}():
+			continue
+		case rgk == " ":
+			Outr = append(Outr, LexObj{
+				Class: SPACE,
+				Type: `SPACE`,
+				Value: rgk,
+			})
+		default:
+			Outr = append(Outr, LexObj{
+				Class: WORD,
+				Type: `NAME`,
+				Value: rgk,
+			})
+		}
+	}
+
+	return Outr
 }
