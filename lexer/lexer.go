@@ -8,25 +8,12 @@ import "strconv"
 
 type Line string
 
-var (
-	Symbols = []string{
-		`;`,
-		`.`,
-		`:`,
-		`(`,
-		`)`,
-		`{`,
-		`}`,
-		`"`,
-		`'`,
-	}
-)
-
 const (
 	BRACKET = "/bracket/" // '{', '}', '(', ')', '[', ']'
 	KEYWORD = "/keyword/"
 	WORD = "/word/"
 	SPACE = "/space/"
+	SYMBOL = "/symbol/"
 )
 
 var (
@@ -56,6 +43,25 @@ var (
 		"{" : `CU`,
 		"}" : `CU_C`,
 	}
+	Symbols = []string{
+		`;`,
+		`.`,
+		`:`,
+		`(`,
+		`)`,
+		`{`,
+		`}`,
+		`"`,
+		`'`,
+	}
+	Vrs = []string{
+		`"`,
+		`'`,
+	}
+	VrsType = map[string]string{
+		`"` : `DOUBLE`,
+		`'` : `SINGLE`,
+	}
 )
 
 type LexObj struct {
@@ -64,11 +70,33 @@ type LexObj struct {
 	Value string
 }
 
+type WIP[TYPE any] struct {
+	Working bool
+	Value TYPE
+}
+
+func (wip *WIP[any]) Start() {
+	wip.Working = true
+}
+
+func (wip *WIP[any]) Stop() {
+	wip.Working = false
+}
+
+func (wip *WIP[any]) Comm() {
+	wip.Working = !wip.Working
+}
+
+func In[TYPE comparable](obj []TYPE, item TYPE) bool {
+	return slices.Contains(obj, item)
+}
+
 func Parse(line Line) []LexObj {
 	var (
 		Final []string
 		Outr []LexObj
 		WIPString string
+		WIPTString WIP[string]
 	)
 
 	Clean := func() {
@@ -79,7 +107,7 @@ func Parse(line Line) []LexObj {
 	}
 
 	for _, wk := range line {
-		if unicode.IsLetter(wk) || unicode.IsNumber(wk) {
+		/* if unicode.IsLetter(wk) || unicode.IsNumber(wk) {
 			WIPString += string(wk)
 			continue
 		}
@@ -89,6 +117,10 @@ func Parse(line Line) []LexObj {
 		}
 		if slices.Contains(Symbols, string(wk)) {
 			Final = append(Final, string(wk))
+		} */
+		
+		if In(Vrs, string(wk)) {
+			WIPTString.Comm()
 		}
 	}
 
