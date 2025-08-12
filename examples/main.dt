@@ -1,5 +1,12 @@
 // Main
 
-Main() {
+int socket = 0
+
+if socket == 2 {
+    // WIP
+}
+
+int Main() {
     print("Hsiasm")
+    return 0
 }

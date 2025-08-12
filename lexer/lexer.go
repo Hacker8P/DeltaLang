@@ -10,7 +10,14 @@ import "unicode"
 
 import "slices"
 
-import "strconv"
+import "logm"
+
+import "os"
+
+var log = lmd.Logger{
+	File: os.Stdout,
+	FileErr: os.Stderr,
+}
 
 type Line string
 
@@ -24,7 +31,10 @@ const (
 	WORD = "/word/"
 	SPACE = "/space/"
 	SYMBOL = "/symbol/"
-	TYPE = "/type/"
+	PUNCT = "/punct/"
+	OPERATOR = "/operator/"
+	CONFRONT = "/confront"
+	NAME = "/name/"
 )
 
 // END
@@ -34,53 +44,29 @@ CLASSES' OBJECTS AND NAMES
 */
 
 var (
-	Keywords = []string{
-		"func",
-		"type",
-		"var",
-		"class",
-		"struct",
-		"string",
-		"int",
-		"int8",
-		"int16",
-		"int32",
-		"int64",
-		"float",
-		"float8",
-		"float16",
-		"float32",
-		"float64",
-		"map",
-	}
-	KeywordType = map[string]string{
+	Keyword = map[string]string{
 		"func" : `FUNC`,
 		"type" : `TYPE`,
 		"var" : `VAR`,
-		"class" : `CLASS`,
-		"struct" : `STRUCT`,
-		"string" : `STRING`,
-		"int" : `INT`,
-		"int8" : `INT8`,
-		"int16" : `INT16`,
-		"int32" : `INT32`,
-		"int64" : `INT64`,
-		"float" : `FLOAT`,
-		"float8" : `FLOAT8`,
-		"float16" : `FLOAT16`,
-		"float32" : `FLOAT32`,
-		"float64" : `FLOAT64`,
-		"map" : `MAP`,
+		"if" : `IF`,
+		"else": `ELSE`,
+		"switch": `SWITCH`,
+		"return": `RETURN`,
+		"pragma": `PRAGMA`,
+		"define": `DEFINE`,
+		"typedef": `TYPEDEF`,
+		"import": `IMPORT`,
+		"include": `INCLUDE`,
+		"const": `CONST`,
+		"continue": `CONTINUE`,
+		"goto": `GOTO`,
+		"break": `BREAK`,
+		"for": `FOR`,
+		"while": `WHILE`,
+		"when": `WHEN`,
+		"thread": `THREAD`,
 	}
-	Brackets = []string{
-		"(",
-		")",
-		"[",
-		"]",
-		"{",
-		"}",
-	}
-	BracketsType = map[string]string{
+	Brackets = map[string]string{
 		"(" : `PA`,
 		")" : `PA_C`,
 		"[" : `SQ`,
@@ -88,16 +74,23 @@ var (
 		"{" : `CU`,
 		"}" : `CU_C`,
 	}
-	Symbols = []string{
-		`;`,
-		`.`,
-		`:`,
-		`(`,
-		`)`,
-		`{`,
-		`}`,
-		`"`,
-		`'`,
+	Punct = map[string]string{
+		"." : `DOT`,
+		":" : `COLON`,
+		";" : `SEMICOLON`,
+	}
+	Operators = map[string]string{
+		"+" : `ADD`,
+		"-" : `SUB`,
+		"/" : `SPLIT`,
+		"*" : `MULT`,
+		"=" : `ASSIGN`,
+		"++": `INCREMENT`,
+		"--": `DECREMENT`,
+		"+=": `ADDTO`,
+		"-=": `SUBTO`,
+		"/=": `SPLITTO`,
+		"*=": `MULTTO`,
 	}
 	Vrs = []string{
 		`"`,
@@ -109,11 +102,26 @@ var (
 		`'` : `SINGLE`,
 		"`" : `INVERSE`,
 	}
-	Types = []string{
-		`STRING`,
-		`NUMBER`,
+	Confront = map[string]string{
+		"==": `EQUAL`,
+		"!=": `NOT EQUAL`,
+		"||": `OR`,
+		"&&": `AND`,
+		">": `ADDC`,
+		"<": `MINC`,
+		">=": `ADDEQUALC`,
+		"<=": `MINEQUALC`,
+	}
+	AbsTypes = map[string]string{
+		"STRING": "STRING",
+		"RAWSTRING": "RAWSTRING",
+		"NUMBER": "NUMBER",
 	}
 )
+
+type DT string
+
+type ERROR error
 
 // END
 
@@ -131,6 +139,11 @@ type LexObj struct {
 	Value string
 }
 
+type Intm struct {
+	Type DT
+	Value string
+}
+
 // END
 
 /*
@@ -141,7 +154,7 @@ type WIP[TYPE any] struct {
 	Working bool
 	Value TYPE
 	Vr string
-	Del string
+	Intm Intm
 	Oth []string
 }
 
@@ -178,25 +191,93 @@ func In[TYPE comparable](obj []TYPE, item TYPE) bool {
 PARSER
 */
 
+/* var (
+	LexSPACE = LexObj{
+		Class: SPACE,
+		Type: `SPACE`,
+	}
+	LexSTRING = LexObj{
+		Class: STRING
+	}
+	LexNUM
+	LexKEYWORD
+	LexWORD
+) */
+
+func Check[T comparable, TT any](a1f map[T]TT, a2s T) bool {
+	_, err := a1f[a2s]
+
+	return err
+}
+
+func CheckAll(a2s string) map[string]map[string]string {
+	if Check(Keyword, a2s) {return map[string]map[string]string{
+		"Type": map[string]string{"." : KEYWORD},
+		"Obj": Keyword,
+	}}
+
+	if Check(Operators, a2s) {return map[string]map[string]string{
+		"Type": map[string]string{"." : OPERATOR},
+		"Obj": Operators,
+	}}
+
+	if Check(Confront, a2s) {return map[string]map[string]string{
+		"Type": map[string]string{"." : CONFRONT},
+		"Obj": Confront,
+	}}
+
+	if Check(Punct, a2s) {return map[string]map[string]string{
+		"Type": map[string]string{"." : PUNCT},
+		"Obj": Punct,
+	}}
+
+	if Check(Brackets, a2s) {return map[string]map[string]string{
+		"Type": map[string]string{"." : BRACKET},
+		"Obj": Brackets,
+	}}
+
+	return map[string]map[string]string{
+		"Type": map[string]string{"." : NAME},
+		"Obj": nil,
+	}
+}
+
+func DictToSlice[TYPE_I comparable, TYPE any](Dict map[TYPE_I]TYPE) []TYPE_I {
+	var Final []TYPE_I
+
+	for kyks := range Dict {
+		Final = append(Final, kyks)
+	}
+
+	return Final
+}
+
 func Parse(line Line) []LexObj {
 	var (
-		Final []string
+		Final []Intm
 		Outr []LexObj
 		// WIPString string
 		WIPString WIP[string] = WIP[string]{
-			Del: "$",
+			Intm: Intm{
+				Type: DT("$"),
+			},
 		}
 		WIPNumber WIP[string] = WIP[string]{
-			Del: "£",
+			Intm: Intm{
+				Type: DT("£"),
+			},
 		}
 		WIPKeyword WIP[string] = WIP[string]{
-			Del: "%",
+			Intm: Intm{
+				Type: DT("%"),
+			},
 		}
 	)
 
 	Clean := func(obj *WIP[string]) {
 		if obj.Value != "" {
-			Final = append(Final, obj.Value) // obj.Del + obj.Value)
+			obj.Intm.Value = obj.Value
+			Final = append(Final, obj.Intm)
 			obj.Value = ""
 		}
 	}
@@ -223,8 +304,9 @@ func Parse(line Line) []LexObj {
 			*/
 
 			if !WIPString.Working {
+				WIPString.Vr = string(wk)
 				WIPString.Start()
-			} else {
+			} else if WIPString.Vr == string(wk) {
 				WIPString.Stop()
 				Clean(&WIPString)
 			}
@@ -239,12 +321,25 @@ func Parse(line Line) []LexObj {
 		*/
 
 		/*
-		If the rune is a letter or a number and WIPString is working, push it into them.
+		If the rune is a letter, a number or a symbol and WIPString is working, push it into them.
 		*/
 
-		if (unicode.IsLetter(wk) || unicode.IsNumber(wk)) && WIPString.Working {
+		if (unicode.IsLetter(wk) || unicode.IsNumber(wk) || unicode.IsPunct(wk)) && WIPString.Working {
 			WIPString.Value += string(wk)
 			continue
+		}
+
+		/*
+		If the rune is a symbol and WIPString isn't working
+		*/
+
+		if unicode.IsPunct(wk) && !WIPString.Working {
+			WIPKeyword.Stop()
+			Clean(&WIPKeyword)
+			Final = append(Final, Intm{
+				Type: DT("!"),
+				Value: string(wk),
+			})
 		}
 
 		/*
@@ -270,6 +365,11 @@ func Parse(line Line) []LexObj {
 			continue
 		}
 
+		/* Final = append(Final, Intm{
+			Type: DT("!"),
+			Value: string(wk),
+		}) */
+
 		WIPNumber.Stop()
 		Clean(&WIPNumber)
 		WIPKeyword.Stop()
@@ -278,35 +378,54 @@ func Parse(line Line) []LexObj {
 		// END
 	}
 
-	
+	/*
+	log.LogInline(false, Final)
+	*/
 
 	for _, rgk := range Final {
+		/*
+		log.Log(false, DictToSlice(Keyword))
+		*/
 		switch {
-		case slices.Contains(Keywords, rgk):
-			Outr = append(Outr, LexObj{
-				Class: KEYWORD,
-				Type: KeywordType[rgk],
-				Value: rgk,
-			})
-		case slices.Contains(Brackets, rgk):
+		case rgk.Type == "%":
+			var Type = CheckAll(rgk.Value)
+
+			if Type["Type"]["."] == NAME {
+				Outr = append(Outr, LexObj{
+					Class: Type["Type"]["."],
+					Type: "NAME",
+					Value: rgk.Value,
+				})
+			} else {
+				Outr = append(Outr, LexObj{
+					Class: Type["Type"]["."],
+					Type: Type["Obj"][rgk.Value],
+					Value: "NONE",
+				})
+			}
+		case rgk.Type == "!" && slices.Contains(DictToSlice(Brackets), rgk.Value):
 			Outr = append(Outr, LexObj{
 				Class: BRACKET,
-				Type: BracketsType[rgk],
-				Value: rgk,
+				Type: Brackets[rgk.Value],
+				Value: rgk.Value,
 			})
-		case func() bool {_, err := strconv.Atoi(rgk); return err == nil}():
-			continue
-		case rgk == " ":
+		case rgk.Type == "$":
 			Outr = append(Outr, LexObj{
-				Class: SPACE,
-				Type: `SPACE`,
-				Value: rgk,
+				Class: WORD,
+				Type: `STRING`,
+				Value: rgk.Value,
+			})
+		case rgk.Type == "£":
+			Outr = append(Outr, LexObj{
+				Class: WORD,
+				Type: `INT`,
+				Value: rgk.Value,
 			})
 		default:
 			Outr = append(Outr, LexObj{
 				Class: WORD,
-				Type: `NAME`,
-				Value: rgk,
+				Type: `ANY`,
+				Value: rgk.Value,
 			})
 		}
 	}

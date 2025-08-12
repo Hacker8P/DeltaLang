@@ -1,24 +1,26 @@
 package main
 
-import "ast"
-
 import "lexer"
 
 import (
 	"os"
 
 	"fmt"
+
+	"logm"
 )
 
+var log = lmd.Logger{
+	File: os.Stdout,
+	FileErr: os.Stderr,
+}
+
 func main() {
-	if len(os.Args) > 2 {
-		var (
-			element ast.Element = ast.Element(os.Args[1])
-		)
-		fmt.Println(ast.Match(element, ast.Comment))
-		fmt.Println(ast.Match(element, ast.FunctionInline))
-		for _, gwxksk := range lexer.Parse(lexer.Line(os.Args[2])) {
-			fmt.Println(gwxksk)
-		}
+	if len(os.Args) > 1 {
+		content, err := os.ReadFile(os.Args[1])
+		log.ErrLog(err)
+		cont := string(content)
+		fmt.Println(`---- LEXER ----`)
+		fmt.Println(lexer.Parse(lexer.Line(cont)))
 	}
 }
